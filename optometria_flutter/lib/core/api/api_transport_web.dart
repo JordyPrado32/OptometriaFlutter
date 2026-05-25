@@ -27,10 +27,12 @@ class WebApiTransport implements ApiTransport {
     }
 
     request.onLoadEnd.listen((_) {
-      if (request.status == 0) {
+      final statusCode = request.status ?? 0;
+
+      if (statusCode == 0) {
         if (!completer.isCompleted) {
           completer.completeError(
-            const ApiException(
+            const ApiException( 
               message:
                   'No se pudo conectar al backend desde el navegador. Revisa que Node este corriendo y que CORS permita esta solicitud.',
             ),
@@ -40,10 +42,7 @@ class WebApiTransport implements ApiTransport {
       }
 
       try {
-        final result = _parseResponse(
-          request.status ?? 0,
-          request.responseText ?? '',
-        );
+        final result = _parseResponse(statusCode, request.responseText ?? '');
 
         if (!completer.isCompleted) {
           completer.complete(result);
@@ -84,9 +83,7 @@ class WebApiTransport implements ApiTransport {
 ApiTransport createTransport() => WebApiTransport();
 
 Map<String, dynamic> _parseResponse(int statusCode, String raw) {
-  final parsed = raw.isEmpty
-      ? <String, dynamic>{}
-      : jsonDecode(raw) as Map<String, dynamic>;
+  final parsed = _decodeJsonObject(raw);
 
   if (statusCode < 200 || statusCode >= 300) {
     final errors = (parsed['errors'] is List)
@@ -101,4 +98,21 @@ Map<String, dynamic> _parseResponse(int statusCode, String raw) {
   }
 
   return parsed;
+}
+
+Map<String, dynamic> _decodeJsonObject(String raw) {
+  if (raw.trim().isEmpty) {
+    return <String, dynamic>{};
+  }
+
+  final decoded = jsonDecode(raw);
+  if (decoded is Map<String, dynamic>) {
+    return decoded;
+  }
+
+  if (decoded is Map) {
+    return decoded.map((key, value) => MapEntry('$key', value));
+  }
+
+  throw const FormatException('Expected a JSON object response.');
 }

@@ -59,7 +59,7 @@ class AuthService {
     return MessageResponse(
       message: json['message']?.toString() ?? 'Recuperacion generada.',
       resetToken: json['resetToken']?.toString(),
-      expiresInMinutes: json['expiresInMinutes'] as int?,
+      expiresInMinutes: _readNullableInt(json['expiresInMinutes']),
     );
   }
 
@@ -132,15 +132,15 @@ class PasswordPolicy {
 
   factory PasswordPolicy.fromJson(Map<String, dynamic> json) {
     return PasswordPolicy(
-      minLength: json['minLength'] as int? ?? 12,
+      minLength: _readInt(json['minLength'], 12),
       requiresUppercase: json['requiresUppercase'] == true,
       requiresLowercase: json['requiresLowercase'] == true,
       requiresNumber: json['requiresNumber'] == true,
       requiresSpecialChar: json['requiresSpecialChar'] == true,
       disallowPersonalData: json['disallowPersonalData'] == true,
-      expiresInDays: json['expiresInDays'] as int? ?? 90,
-      maxFailedAttempts: json['maxFailedAttempts'] as int? ?? 5,
-      lockoutMinutes: json['lockoutMinutes'] as int? ?? 15,
+      expiresInDays: _readInt(json['expiresInDays'], 90),
+      maxFailedAttempts: _readInt(json['maxFailedAttempts'], 5),
+      lockoutMinutes: _readInt(json['lockoutMinutes'], 15),
       twoFactorSupported: json['twoFactorSupported'] == true,
     );
   }
@@ -351,4 +351,32 @@ class SessionResponse {
   final bool twoFactorEnabled;
   final bool passwordExpired;
   final bool mustChangePassword;
+}
+
+int _readInt(dynamic value, int fallback) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
+  }
+
+  return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+int? _readNullableInt(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
+  }
+
+  return int.tryParse(value.toString());
 }

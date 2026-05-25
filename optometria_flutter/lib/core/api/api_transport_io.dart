@@ -58,9 +58,7 @@ class IoApiTransport implements ApiTransport {
 ApiTransport createTransport() => IoApiTransport();
 
 Map<String, dynamic> _parseResponse(int statusCode, String raw) {
-  final parsed = raw.isEmpty
-      ? <String, dynamic>{}
-      : jsonDecode(raw) as Map<String, dynamic>;
+  final parsed = _decodeJsonObject(raw);
 
   if (statusCode < 200 || statusCode >= 300) {
     final errors = (parsed['errors'] is List)
@@ -75,4 +73,21 @@ Map<String, dynamic> _parseResponse(int statusCode, String raw) {
   }
 
   return parsed;
+}
+
+Map<String, dynamic> _decodeJsonObject(String raw) {
+  if (raw.trim().isEmpty) {
+    return <String, dynamic>{};
+  }
+
+  final decoded = jsonDecode(raw);
+  if (decoded is Map<String, dynamic>) {
+    return decoded;
+  }
+
+  if (decoded is Map) {
+    return decoded.map((key, value) => MapEntry('$key', value));
+  }
+
+  throw const FormatException('Expected a JSON object response.');
 }
